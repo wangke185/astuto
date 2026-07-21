@@ -45,6 +45,9 @@ services:
       <<: *db-env
       BASE_URL: http://yourwebsite.com
       SECRET_KEY_BASE: yoursecretkeybase
+      DEFAULT_ADMIN_EMAIL: admin@example.com
+      # Optional. If omitted, a unique password is generated and printed once in the web container logs.
+      DEFAULT_ADMIN_PASSWORD: your-strong-unique-password
     ports:
       - "3000:3000"
     depends_on:
@@ -53,9 +56,9 @@ services:
 volumes:
   dbdata:
 ```
-3. Edit the environment variables to fit your needs
+3. Edit the environment variables to fit your needs. Use unique, high-entropy values for `POSTGRES_PASSWORD`, `SECRET_KEY_BASE`, and `DEFAULT_ADMIN_PASSWORD`.
 4. Run `docker compose pull && docker compose up`
-5. You should now have a running instance of Astuto on port 3000. A default user account has been created with credentials email: `admin@example.com`, password: `password`.
+5. You should now have a running instance of Astuto on port 3000. The initial owner email is set by `DEFAULT_ADMIN_EMAIL`. The password is taken from `DEFAULT_ADMIN_PASSWORD`; when that variable is blank or omitted, a random password is printed once during database seeding. Existing databases and existing owner credentials are not changed.
 
 ## Contributing
 
