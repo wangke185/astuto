@@ -19,6 +19,7 @@ The `rescue-v1.0.0` snapshot contains a bounded webhook reliability, target-secu
 
 - [Astuto Webhook Rescue Case Study](./docs/case-studies/astuto-webhook-rescue.md)
 - [Software Project Rescue Checklist](./docs/project-rescue-checklist.md)
+- [Software Project Rescue Service](./docs/services/software-rescue-offer.md)
 - [Rescue v1.0.0 Release Notes](./docs/releases/rescue-v1.0.0.md)
 
 The work does not represent a complete security audit. Review the stated limitations before considering production use.
