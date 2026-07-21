@@ -11,14 +11,17 @@ Astuto is an open source customer feedback tool. It helps you collect, manage an
 
 <img src="./images/hero-image.png" />
 
-## Rescue branch documentation
+## Unofficial rescue fork
 
-This fork contains a bounded webhook reliability and deployment-credential hardening exercise on the `rescue/webhook-hardening-v1` branch:
+This repository is an unofficial maintenance demonstration fork. It is not affiliated with, endorsed by, or presented as the official continuation of Astuto.
+
+The `rescue-v1.0.0` snapshot contains a bounded webhook reliability, target-security, test-coverage, and deployment-credential hardening exercise. It is preserved as a software-project rescue case rather than a commercial relaunch.
 
 - [Astuto Webhook Rescue Case Study](./docs/case-studies/astuto-webhook-rescue.md)
 - [Software Project Rescue Checklist](./docs/project-rescue-checklist.md)
+- [Rescue v1.0.0 Release Notes](./docs/releases/rescue-v1.0.0.md)
 
-These documents describe the scope, defects, validation evidence, limitations, and the commercial decision not to relaunch the product. They do not represent a complete security audit of Astuto.
+The work does not represent a complete security audit. Review the stated limitations before considering production use.
 
 ## Features
 
@@ -69,9 +72,11 @@ volumes:
 4. Run `docker compose pull && docker compose up`
 5. You should now have a running instance of Astuto on port 3000. The initial owner email is set by `DEFAULT_ADMIN_EMAIL`. The password is taken from `DEFAULT_ADMIN_PASSWORD`; when that variable is blank or omitted, a random password is printed once during database seeding. Existing databases and existing owner credentials are not changed.
 
+> Note: the upstream Docker image referenced above is not rebuilt or published by this rescue fork. Building and operating the modified source requires an independent deployment review.
+
 ## Contributing
 
-There are many ways to contribute to Astuto, not just coding. Proposing features, reporting issues, translating to a new language or improving documentation are a few examples! Please read our [contributing guidelines](https://github.com/riggraz/astuto/blob/main/CONTRIBUTING.md) to learn more.
+There are many ways to contribute to Astuto, not just coding. Proposing features, reporting issues, translating to a new language or improving documentation are a few examples! Please read the upstream [contributing guidelines](https://github.com/riggraz/astuto/blob/main/CONTRIBUTING.md) to learn more.
 
 ## Credits
 
