@@ -5,7 +5,7 @@ require 'uri'
 class WebhookTargetValidator
   class InvalidTargetError < StandardError; end
 
-  BLOCKED_NETWORKS = [
+  BLOCKED_IPV4_NETWORKS = [
     IPAddr.new('0.0.0.0/8'),
     IPAddr.new('10.0.0.0/8'),
     IPAddr.new('100.64.0.0/10'),
@@ -17,6 +17,9 @@ class WebhookTargetValidator
     IPAddr.new('198.18.0.0/15'),
     IPAddr.new('224.0.0.0/4'),
     IPAddr.new('240.0.0.0/4'),
+  ].freeze
+
+  BLOCKED_IPV6_NETWORKS = [
     IPAddr.new('::/128'),
     IPAddr.new('::1/128'),
     IPAddr.new('::ffff:0:0/96'),
@@ -53,7 +56,8 @@ class WebhookTargetValidator
 
   def self.blocked_address?(address)
     ip_address = IPAddr.new(address)
-    BLOCKED_NETWORKS.any? { |network| network.include?(ip_address) }
+    blocked_networks = ip_address.ipv4? ? BLOCKED_IPV4_NETWORKS : BLOCKED_IPV6_NETWORKS
+    blocked_networks.any? { |network| network.include?(ip_address) }
   rescue IPAddr::InvalidAddressError
     true
   end
