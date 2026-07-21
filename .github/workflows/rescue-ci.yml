@@ -60,8 +60,18 @@ jobs:
         run: bundle exec rails db:create db:schema:load
 
       - name: Run focused webhook tests
-        run: >-
-          bundle exec rspec
-          spec/jobs/run_webhook_spec.rb
-          spec/services/webhook_target_validator_spec.rb
-          spec/models/webhook_spec.rb
+        run: |
+          set -o pipefail
+          bundle exec rspec \
+            spec/jobs/run_webhook_spec.rb \
+            spec/services/webhook_target_validator_spec.rb \
+            spec/models/webhook_spec.rb \
+            2>&1 | tee rescue-test-output.txt
+
+      - name: Upload focused test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rescue-test-output
+          path: rescue-test-output.txt
+          if-no-files-found: error
