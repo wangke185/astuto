@@ -1,0 +1,77 @@
+name: Rescue CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'rescue/**'
+
+jobs:
+  webhook-hardening:
+    runs-on: ubuntu-22.04
+
+    services:
+      postgres:
+        image: postgres:14.5
+        env:
+          POSTGRES_USER: astuto
+          POSTGRES_PASSWORD: dbpass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U astuto"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      RAILS_ENV: test
+      POSTGRES_HOST: localhost
+      POSTGRES_USER: astuto
+      POSTGRES_PASSWORD: dbpass
+      BASE_URL: http://localhost:3000
+      SECRET_KEY_BASE: rescue-ci-secret-key-base
+      ACTIVE_JOB_BACKEND: async
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0.6'
+          bundler-cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
+      - name: Install Yarn
+        run: npm install --global yarn@1.22.22
+
+      - name: Install JavaScript dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Prepare test database
+        run: bundle exec rails db:create db:schema:load
+
+      - name: Run focused webhook tests
+        run: |
+          set -o pipefail
+          bundle exec rspec \
+            spec/jobs/run_webhook_spec.rb \
+            spec/services/webhook_target_validator_spec.rb \
+            spec/models/webhook_spec.rb \
+            2>&1 | tee rescue-test-output.txt
+
+      - name: Upload focused test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rescue-test-output
+          path: rescue-test-output.txt
+          if-no-files-found: error

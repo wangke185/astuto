@@ -1,6 +1,14 @@
 class RunWebhook < ActiveJob::Base
   queue_as :webhooks
 
+  WEBHOOK_REQUEST_TIMEOUT_SECONDS = 10
+  HTTP_METHODS = {
+    'http_post' => :post,
+    'http_put' => :put,
+    'http_patch' => :patch,
+    'http_delete' => :delete,
+  }.freeze
+
   # entities is a hash with entity_name as key and entity_id as value (entity_name will be mapped to an ActiveRecord class)
   def perform(webhook_id:, current_tenant_id:, is_test: false, entities: {})
     Current.tenant = Tenant.find(current_tenant_id)
@@ -34,37 +42,31 @@ class RunWebhook < ActiveJob::Base
       entities: loaded_entities,
     ).run
 
-    # Parse and render template for webhook's URL
-    url_template = Liquid::Template.parse(webhook.url)
-    url = url_template.render(context)
+    # Render and validate the URL immediately before making the request. The URL can
+    # contain Liquid variables, so validating only when the webhook is saved is not enough.
+    url = Liquid::Template.parse(webhook.url).render(context)
+    WebhookTargetValidator.validate!(url)
 
-    # Parse and render template for webhook's HTTP body
-    http_body_template = Liquid::Template.parse(webhook.http_body)
-    http_body = http_body_template.render(context)
-
-    # Prepare HTTP body
+    # Render the optional JSON body.
     if webhook.http_body.present?
-      http_body = JSON.parse(http_body).to_json
+      rendered_http_body = Liquid::Template.parse(webhook.http_body).render(context)
+      http_body = JSON.parse(rendered_http_body).to_json
     else
       http_body = nil
     end
 
-    # Prepare HTTP headers
-    if webhook.http_headers.present?
-      http_headers = JSON.parse(webhook.http_headers).each_with_object({}) do |header, memo|
-        memo[header['key']] = header['value']
-      end
-    else
-      http_headers = {}
-    end
+    http_headers = normalize_http_headers(webhook.http_headers)
 
-    # Make HTTP request
-    HTTParty.send(
-      map_webhook_http_method(webhook.http_method).downcase,
+    # Redirects are disabled because a public URL could otherwise redirect the server
+    # to a private or link-local address after the initial target validation.
+    HTTParty.public_send(
+      map_webhook_http_method(webhook.http_method),
       url,
       {
         body: http_body,
         headers: http_headers,
+        timeout: WEBHOOK_REQUEST_TIMEOUT_SECONDS,
+        no_follow: true,
       }
     )
   end
@@ -72,17 +74,33 @@ class RunWebhook < ActiveJob::Base
   private
 
     def map_webhook_http_method(http_method)
-      case http_method
-      when :http_post
-        'POST'
-      when :http_put
-        'PUT'
-      when :http_patch
-        'PATCH'
-      when :http_delete
-        'DELETE'
-      else
-        'POST'
+      HTTP_METHODS.fetch(http_method.to_s) do
+        raise ArgumentError, "Unsupported webhook HTTP method: #{http_method.inspect}"
+      end
+    end
+
+    def normalize_http_headers(http_headers)
+      return {} if http_headers.blank?
+
+      parsed_headers = http_headers.is_a?(String) ? JSON.parse(http_headers) : http_headers
+      unless parsed_headers.is_a?(Array)
+        raise ArgumentError, 'Webhook HTTP headers must be an array'
+      end
+
+      parsed_headers.each_with_object({}) do |header, memo|
+        unless header.respond_to?(:[])
+          raise ArgumentError, 'Each webhook HTTP header must contain a key and value'
+        end
+
+        key = header['key'] || header[:key]
+        value = header['value'] || header[:value]
+
+        next if key.blank? && value.blank?
+        if key.blank? || value.blank?
+          raise ArgumentError, 'Each webhook HTTP header must contain a key and value'
+        end
+
+        memo[key.to_s] = value.to_s
       end
     end
 

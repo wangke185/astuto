@@ -2,7 +2,7 @@
   <img width="400" src="./images/logo-and-name.png" />
 </p>
 <p align="center">
-  <a href="https://www.producthunt.com/posts/astuto?utm_source=badge-top-post-badge&utm_medium=badge&utm_souce=badge-astuto" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=179870&theme=neutral&period=daily" alt="Astuto - An open source customer feedback tool 🦊 | Product Hunt Embed" style="width: 250px; height: 54px;" width="250px" height="54px" /></a>
+  <a href="https://www.producthunt.com/posts/astuto?utm_source=badge-top-post-badge&utm_medium=badge&utm_souce=badge-astuto" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=179870&theme=neutral&period=daily" alt="Astuto - An open source customer feedback tool 🦊 | Product Hunt Embed" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 </p>
 
 ### 👋🏻 Astuto is not maintained anymore! See [this issue](https://github.com/astuto/astuto/issues/487). Thanks everyone for the support :)
@@ -10,6 +10,15 @@
 Astuto is an open source customer feedback tool. It helps you collect, manage and prioritize feedback from your customers, so you can build a better product.
 
 <img src="./images/hero-image.png" />
+
+## Rescue branch documentation
+
+This fork contains a bounded webhook reliability and deployment-credential hardening exercise on the `rescue/webhook-hardening-v1` branch:
+
+- [Astuto Webhook Rescue Case Study](./docs/case-studies/astuto-webhook-rescue.md)
+- [Software Project Rescue Checklist](./docs/project-rescue-checklist.md)
+
+These documents describe the scope, defects, validation evidence, limitations, and the commercial decision not to relaunch the product. They do not represent a complete security audit of Astuto.
 
 ## Features
 
@@ -45,6 +54,9 @@ services:
       <<: *db-env
       BASE_URL: http://yourwebsite.com
       SECRET_KEY_BASE: yoursecretkeybase
+      DEFAULT_ADMIN_EMAIL: admin@example.com
+      # Optional. If omitted, a unique password is generated and printed once in the web container logs.
+      DEFAULT_ADMIN_PASSWORD: your-strong-unique-password
     ports:
       - "3000:3000"
     depends_on:
@@ -53,9 +65,9 @@ services:
 volumes:
   dbdata:
 ```
-3. Edit the environment variables to fit your needs
+3. Edit the environment variables to fit your needs. Use unique, high-entropy values for `POSTGRES_PASSWORD`, `SECRET_KEY_BASE`, and `DEFAULT_ADMIN_PASSWORD`.
 4. Run `docker compose pull && docker compose up`
-5. You should now have a running instance of Astuto on port 3000. A default user account has been created with credentials email: `admin@example.com`, password: `password`.
+5. You should now have a running instance of Astuto on port 3000. The initial owner email is set by `DEFAULT_ADMIN_EMAIL`. The password is taken from `DEFAULT_ADMIN_PASSWORD`; when that variable is blank or omitted, a random password is printed once during database seeding. Existing databases and existing owner credentials are not changed.
 
 ## Contributing
 
