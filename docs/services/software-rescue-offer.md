@@ -96,6 +96,14 @@ Possible scope:
 6. **Verification** — run focused tests, regression tests, and a production-style build where feasible.
 7. **Handover** — provide code, test evidence, operational notes, and known limitations.
 
+## Engagement documents
+
+- [Client Intake Checklist](./client-intake-checklist.md) — authority, business evidence, access, scope, and acquisition checks before work starts.
+- [Technical Rescue Assessment Template](./technical-rescue-assessment-template.md) — minimum evidence and report structure for a paid assessment.
+- [Technical Rescue Statement of Work Template](./technical-rescue-sow-template.md) — scope, exclusions, deliverables, payment milestones, change control, and handover terms.
+
+The statement-of-work template is an operational starting point and not jurisdiction-specific legal advice. A signed engagement should receive appropriate legal review where required.
+
 ## Example case
 
 The [Astuto webhook rescue case study](../case-studies/astuto-webhook-rescue.md) documents a bounded maintenance exercise on an abandoned open-source SaaS codebase. The work identified and corrected HTTP method handling, header parsing, webhook target validation, redirect handling, network timeouts, unsafe default credentials, and missing job-level tests. Focused CI, the original test suite, and a production Docker build were used as verification evidence.
