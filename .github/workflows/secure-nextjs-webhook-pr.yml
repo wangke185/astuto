@@ -1,0 +1,30 @@
+name: Secure Next.js webhook PR verification
+
+on:
+  pull_request:
+    paths:
+      - "examples/secure-nextjs-webhook-receiver/**"
+      - ".github/workflows/secure-nextjs-webhook-pr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/secure-nextjs-webhook-receiver
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: examples/secure-nextjs-webhook-receiver/package.json
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
