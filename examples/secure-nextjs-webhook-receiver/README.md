@@ -24,6 +24,8 @@ npm run dev
 
 Generate a signature over `<timestamp>.<raw-body>` and send it as `x-webhook-signature`; send the Unix timestamp as `x-webhook-timestamp`.
 
+The repository workflow runs the same tests, TypeScript check, and production Next.js build on every change to this example.
+
 ## Production limitations
 
 The included in-memory idempotency store and console queue are deliberately demo-only. Replace them with Redis or SQL atomic uniqueness and a durable queue. Adapt header names and signature construction to the provider's official specification. Do not log secrets or raw customer payloads.
