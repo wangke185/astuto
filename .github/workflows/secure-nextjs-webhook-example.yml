@@ -6,7 +6,9 @@ on:
       - "examples/secure-nextjs-webhook-receiver/**"
       - ".github/workflows/secure-nextjs-webhook-example.yml"
   push:
-    branches: [main]
+    branches:
+      - main
+      - "portfolio/**"
     paths:
       - "examples/secure-nextjs-webhook-receiver/**"
       - ".github/workflows/secure-nextjs-webhook-example.yml"
