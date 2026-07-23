@@ -1,6 +1,6 @@
-import { handleWebhook } from "../../../../../lib/webhooks/handler";
-import { webhookQueue } from "../../../../../lib/webhooks/queue";
-import { idempotencyStore } from "../../../../../lib/webhooks/store";
+import { handleWebhook } from "../../../../lib/webhooks/handler";
+import { webhookQueue } from "../../../../lib/webhooks/queue";
+import { idempotencyStore } from "../../../../lib/webhooks/store";
 
 export const runtime = "nodejs";
 
