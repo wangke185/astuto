@@ -1,4 +1,6 @@
-# Public Planning Portfolio
+# Public Portfolio
+
+Start with [Software Rescue, Integrations, and Product Planning](./start-here.md) for a one-page overview of suitable problems, inspectable evidence, bounded paid starting points, working rules, and truth boundaries.
 
 These documents are public hypothetical exercises or bounded case-study artifacts. They are intended to demonstrate planning method, technical reasoning, scope control, ticket quality, acceptance criteria, technical communication, and evidence-based delivery.
 
