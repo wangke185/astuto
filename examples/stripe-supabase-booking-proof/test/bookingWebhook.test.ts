@@ -72,7 +72,10 @@ class CalendarSpy implements CalendarGateway {
 const secret = "whsec_test_secret";
 const now = 1_800_000_000;
 
-function event(type: StripeWebhookEvent["type"], overrides: Partial<StripeWebhookEvent> = {}): StripeWebhookEvent {
+function event(
+  type: StripeWebhookEvent["type"],
+  overrides: Partial<StripeWebhookEvent> = {},
+): StripeWebhookEvent {
   return {
     id: type === "payment_intent.succeeded" ? "evt_success" : "evt_failure",
     type,
@@ -89,7 +92,7 @@ function event(type: StripeWebhookEvent["type"], overrides: Partial<StripeWebhoo
   };
 }
 
-function signedRequest(payload: StripeWebhookEvent, timestamp = now) {
+function signedRequest(payload: unknown, timestamp = now) {
   const rawBody = JSON.stringify(payload);
   const signature = createHmac("sha256", secret)
     .update(`${timestamp}.${rawBody}`)
@@ -222,7 +225,7 @@ test("rejects calendar identifiers that do not match stored state", async () => 
   assert.match(response.body.error ?? "", /does not match/);
 });
 
-test("does not mark an event processed when calendar confirmation fails", async () => {
+test("leaves a failed calendar confirmation available for retry", async () => {
   const repository = new MemoryRepository();
   const calendar = new CalendarSpy();
   calendar.failNextConfirm = true;
@@ -235,6 +238,11 @@ test("does not mark an event processed when calendar confirmation fails", async 
     calendar,
     nowSeconds: now,
   });
+
+  assert.equal(failed.status, 400);
+  assert.equal(repository.processed.has("evt_success"), false);
+  assert.equal(repository.paidCalls, 0);
+
   const retried = await handleStripeWebhook({
     request,
     endpointSecret: secret,
@@ -243,20 +251,21 @@ test("does not mark an event processed when calendar confirmation fails", async 
     nowSeconds: now,
   });
 
-  assert.equal(failed.status, 400);
-  assert.equal(repository.processed.has("evt_success"), true);
   assert.equal(retried.status, 200);
+  assert.equal(repository.processed.has("evt_success"), true);
   assert.equal(repository.paidCalls, 1);
 });
 
 test("acknowledges unrelated Stripe event types without side effects", async () => {
   const repository = new MemoryRepository();
   const calendar = new CalendarSpy();
-  const payload = event("payment_intent.succeeded") as StripeWebhookEvent & { type: string };
-  payload.type = "customer.created";
+  const payload = {
+    ...event("payment_intent.succeeded"),
+    type: "customer.created",
+  };
 
   const response = await handleStripeWebhook({
-    request: signedRequest(payload as StripeWebhookEvent),
+    request: signedRequest(payload),
     endpointSecret: secret,
     repository,
     calendar,
