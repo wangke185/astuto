@@ -1,0 +1,35 @@
+name: Stripe Supabase booking proof
+
+on:
+  pull_request:
+    paths:
+      - "examples/stripe-supabase-booking-proof/**"
+      - ".github/workflows/stripe-supabase-booking-proof.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "examples/stripe-supabase-booking-proof/**"
+      - ".github/workflows/stripe-supabase-booking-proof.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/stripe-supabase-booking-proof
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: examples/stripe-supabase-booking-proof/package-lock.json
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
