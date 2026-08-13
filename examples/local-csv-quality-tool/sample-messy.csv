@@ -1,0 +1,6 @@
+ name ,status,note
+ Alice ,NULL," hello   world "
+ Alice ,NULL," hello   world "
+ , , 
+ Bob ,ok,test
+ Carol ,N/A," spaced    text "

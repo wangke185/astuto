@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Local CSV Quality Tool</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: #0b1020;
+      --panel: #121932;
+      --panel-2: #18213f;
+      --text: #f6f7fb;
+      --muted: #aeb8d0;
+      --accent: #79a9ff;
+      --border: #2a355c;
+      --good: #66d9a3;
+      --warn: #f6c76b;
+      --danger: #ff8f8f;
+      --shadow: 0 18px 50px rgba(0,0,0,.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #19264e 0, var(--bg) 38%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 38px 0 64px;
+    }
+    .hero {
+      display: flex;
+      gap: 20px;
+      justify-content: space-between;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+    .hero h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); }
+    .hero p { margin: 0; max-width: 720px; color: var(--muted); line-height: 1.6; }
+    .badge {
+      display: inline-flex;
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      background: rgba(121,169,255,.08);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(280px, .6fr);
+      gap: 18px;
+    }
+    .panel {
+      background: rgba(18,25,50,.94);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .drop-zone {
+      border: 1.5px dashed #6072aa;
+      border-radius: 16px;
+      padding: 34px 18px;
+      text-align: center;
+      background: rgba(255,255,255,.02);
+      transition: .18s ease;
+      cursor: pointer;
+    }
+    .drop-zone.dragover { border-color: var(--accent); background: rgba(121,169,255,.08); }
+    .drop-zone strong { display: block; font-size: 18px; margin-bottom: 6px; }
+    .drop-zone span { color: var(--muted); font-size: 13px; }
+    input[type=file] { display: none; }
+    .options { display: grid; gap: 11px; margin-top: 18px; }
+    label.option {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    label.option strong { color: var(--text); font-weight: 600; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 10px 14px;
+      font: inherit;
+      cursor: pointer;
+    }
+    button.primary { background: var(--accent); color: #061023; border-color: transparent; font-weight: 700; }
+    button:disabled { opacity: .42; cursor: not-allowed; }
+    .privacy {
+      margin-top: 14px;
+      border-left: 3px solid var(--good);
+      padding-left: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(255,255,255,.025);
+    }
+    .metric .value { font-size: 25px; font-weight: 800; }
+    .metric .label { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .status {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      min-height: 44px;
+    }
+    .status.error { color: var(--danger); }
+    .status.good { color: var(--good); }
+    .section { margin-top: 18px; }
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .section-title h2 { margin: 0; font-size: 18px; }
+    .section-title span { color: var(--muted); font-size: 12px; }
+    .table-wrap {
+      overflow: auto;
+      max-height: 410px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+    table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 12px; }
+    th, td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+    th { position: sticky; top: 0; z-index: 1; background: #18213f; color: #dce4f8; }
+    tr:last-child td { border-bottom: 0; }
+    td.muted { color: var(--muted); }
+    .pill {
+      display: inline-flex;
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .footer-note { margin-top: 20px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+      .hero { display: block; }
+      .hero .badge { margin-top: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="hero">
+      <div>
+        <div class="badge">Privacy-first · runs in your browser</div>
+        <h1>Local CSV Quality Tool</h1>
+        <p>Clean repetitive CSV mess without uploading business or research data: trim cells, collapse stray whitespace, normalize common missing-value markers, remove blank rows and exact duplicates, then export a clean file plus a quality report.</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="panel">
+        <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Choose a CSV file">
+          <strong>Drop a CSV / TSV / TXT file here</strong>
+          <span>or click to choose a local file · nothing is uploaded</span>
+          <input id="fileInput" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" />
+        </div>
+
+        <div class="options">
+          <label class="option"><input id="firstRowHeader" type="checkbox" checked /><span><strong>First row is a header</strong><br/>Blank or repeated headers are normalized safely.</span></label>
+          <label class="option"><input id="trimCells" type="checkbox" checked /><span><strong>Trim leading/trailing whitespace</strong><br/>Removes accidental spaces around values.</span></label>
+          <label class="option"><input id="collapseWhitespace" type="checkbox" checked /><span><strong>Collapse repeated spaces/tabs</strong><br/>Converts repeated horizontal whitespace to a single space.</span></label>
+          <label class="option"><input id="normalizeMissing" type="checkbox" checked /><span><strong>Normalize missing markers</strong><br/>Converts values such as NULL, N/A, none and #N/A to empty cells.</span></label>
+          <label class="option"><input id="removeEmptyRows" type="checkbox" checked /><span><strong>Remove fully empty rows</strong></span></label>
+          <label class="option"><input id="removeDuplicates" type="checkbox" checked /><span><strong>Remove exact duplicate rows</strong><br/>Only removes rows whose cleaned cells match exactly.</span></label>
+        </div>
+
+        <div class="actions">
+          <button id="runButton" class="primary" disabled>Clean & profile</button>
+          <button id="downloadCsv" disabled>Download cleaned CSV</button>
+          <button id="downloadReport" disabled>Download quality report</button>
+        </div>
+
+        <div class="privacy"><strong>Privacy:</strong> file processing happens locally in this browser tab. The tool has no upload endpoint, analytics SDK or external API call.</div>
+      </section>
+
+      <aside class="panel">
+        <div class="metrics">
+          <div class="metric"><div id="mRowsIn" class="value">—</div><div class="label">source data rows</div></div>
+          <div class="metric"><div id="mRowsOut" class="value">—</div><div class="label">clean rows</div></div>
+          <div class="metric"><div id="mRemoved" class="value">—</div><div class="label">rows removed</div></div>
+          <div class="metric"><div id="mColumns" class="value">—</div><div class="label">columns</div></div>
+        </div>
+        <div id="status" class="status">Choose a file to begin.</div>
+      </aside>
+    </div>
+
+    <section id="qualitySection" class="panel section" hidden>
+      <div class="section-title">
+        <h2>Quality summary</h2>
+        <span id="qualityMeta"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Column</th><th>Type hint</th><th>Missing</th><th>Non-empty</th><th>Unique</th><th>Missing %</th></tr></thead>
+          <tbody id="qualityBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="previewSection" class="panel section" hidden>
+      <div class="section-title">
+        <h2>Cleaned preview</h2>
+        <span>first 50 rows</span>
+      </div>
+      <div class="table-wrap"><table id="previewTable"></table></div>
+    </section>
+
+    <div class="footer-note">This version intentionally avoids automatic date conversion, numeric coercion, fuzzy deduplication and destructive inference. Those operations can silently change valid business data and should require explicit rules.</div>
+  </main>
+
+  <script src="./core.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const Core = window.LocalCsvCore;
+      const $ = (id) => document.getElementById(id);
+      const dropZone = $('dropZone');
+      const fileInput = $('fileInput');
+      const runButton = $('runButton');
+      const downloadCsv = $('downloadCsv');
+      const downloadReport = $('downloadReport');
+      const status = $('status');
+      let source = null;
+      let latest = null;
+
+      function setStatus(message, kind) {
+        status.className = `status${kind ? ' ' + kind : ''}`;
+        status.textContent = message;
+      }
+
+      function humanDelimiter(delimiter) {
+        if (delimiter === '\t') return 'TAB';
+        if (delimiter === ' ') return 'SPACE';
+        return delimiter;
+      }
+
+      function readFile(file) {
+        if (!file) return;
+        if (file.size > 25 * 1024 * 1024) {
+          setStatus('This browser-only version caps files at 25 MB to avoid freezing the tab.', 'error');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const text = String(reader.result || '');
+          const delimiter = Core.detectDelimiter(text);
+          const parsed = Core.parseDelimited(text, delimiter);
+          source = { file, text, delimiter, parsed };
+          latest = null;
+          runButton.disabled = false;
+          downloadCsv.disabled = true;
+          downloadReport.disabled = true;
+          $('qualitySection').hidden = true;
+          $('previewSection').hidden = true;
+          $('mRowsIn').textContent = '—';
+          $('mRowsOut').textContent = '—';
+          $('mRemoved').textContent = '—';
+          $('mColumns').textContent = '—';
+          setStatus(`${file.name} loaded. Detected delimiter: ${humanDelimiter(delimiter)}. Ready to clean.`, 'good');
+        };
+        reader.onerror = () => setStatus('Could not read the selected file.', 'error');
+        reader.readAsText(file, 'utf-8');
+      }
+
+      function getOptions() {
+        return {
+          firstRowHeader: $('firstRowHeader').checked,
+          trimCells: $('trimCells').checked,
+          collapseWhitespace: $('collapseWhitespace').checked,
+          normalizeMissing: $('normalizeMissing').checked,
+          removeEmptyRows: $('removeEmptyRows').checked,
+          removeDuplicates: $('removeDuplicates').checked
+        };
+      }
+
+      function renderQuality(result) {
+        const body = $('qualityBody');
+        body.textContent = '';
+        for (const col of result.report.columns) {
+          const tr = document.createElement('tr');
+          const missingPct = col.rows ? ((col.missing / col.rows) * 100).toFixed(1) : '0.0';
+          const values = [col.name, col.inferredType, col.missing, col.nonEmpty, col.unique, `${missingPct}%`];
+          values.forEach((value, index) => {
+            const td = document.createElement('td');
+            if (index === 1) {
+              const span = document.createElement('span');
+              span.className = 'pill';
+              span.textContent = value;
+              td.appendChild(span);
+            } else {
+              td.textContent = value;
+            }
+            tr.appendChild(td);
+          });
+          body.appendChild(tr);
+        }
+        $('qualityMeta').textContent = `${result.report.outputRows} rows · ${result.report.sourceColumns} columns`;
+        $('qualitySection').hidden = false;
+      }
+
+      function renderPreview(result) {
+        const table = $('previewTable');
+        table.textContent = '';
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        result.headers.forEach((header) => {
+          const th = document.createElement('th');
+          th.textContent = header;
+          headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        result.rows.slice(0, 50).forEach((row) => {
+          const tr = document.createElement('tr');
+          row.forEach((value) => {
+            const td = document.createElement('td');
+            td.textContent = value === '' ? '∅' : value;
+            if (value === '') td.className = 'muted';
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        $('previewSection').hidden = false;
+      }
+
+      function run() {
+        if (!source) return;
+        try {
+          const result = Core.cleanTable(source.parsed.rows, getOptions());
+          const report = Core.buildQualityReport(source.file.name, source.delimiter, result);
+          latest = { result, report };
+
+          const removed = result.report.sourceRows - result.report.outputRows;
+          $('mRowsIn').textContent = result.report.sourceRows.toLocaleString();
+          $('mRowsOut').textContent = result.report.outputRows.toLocaleString();
+          $('mRemoved').textContent = removed.toLocaleString();
+          $('mColumns').textContent = result.report.sourceColumns.toLocaleString();
+          renderQuality(result);
+          renderPreview(result);
+          downloadCsv.disabled = false;
+          downloadReport.disabled = false;
+          setStatus(`Done. Removed ${result.report.emptyRowsRemoved} empty row(s) and ${result.report.duplicatesRemoved} duplicate row(s); normalized ${result.report.missingNormalized} missing marker(s).`, 'good');
+        } catch (error) {
+          console.error(error);
+          setStatus(`Cleaning failed: ${error.message || error}`, 'error');
+        }
+      }
+
+      function download(name, content, mime) {
+        const blob = new Blob([content], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 500);
+      }
+
+      dropZone.addEventListener('click', () => fileInput.click());
+      dropZone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') fileInput.click();
+      });
+      fileInput.addEventListener('change', () => readFile(fileInput.files[0]));
+      ['dragenter', 'dragover'].forEach((event) => dropZone.addEventListener(event, (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+      }));
+      ['dragleave', 'drop'].forEach((event) => dropZone.addEventListener(event, (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+      }));
+      dropZone.addEventListener('drop', (e) => readFile(e.dataTransfer.files[0]));
+      runButton.addEventListener('click', run);
+
+      downloadCsv.addEventListener('click', () => {
+        if (!latest || !source) return;
+        const base = source.file.name.replace(/\.[^.]+$/, '') || 'data';
+        const csv = Core.toDelimited(latest.result.headers, latest.result.rows, ',');
+        download(`${base}.cleaned.csv`, '\uFEFF' + csv, 'text/csv;charset=utf-8');
+      });
+
+      downloadReport.addEventListener('click', () => {
+        if (!latest || !source) return;
+        const base = source.file.name.replace(/\.[^.]+$/, '') || 'data';
+        download(`${base}.quality-report.json`, JSON.stringify(latest.report, null, 2), 'application/json;charset=utf-8');
+      });
+    })();
+  </script>
+</body>
+</html>
