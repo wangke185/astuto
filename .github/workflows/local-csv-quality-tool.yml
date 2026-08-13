@@ -1,0 +1,24 @@
+name: Local CSV Quality Tool
+
+on:
+  push:
+    branches:
+      - ai-self-sustain/local-csv-quality-v1
+    paths:
+      - 'examples/local-csv-quality-tool/**'
+      - '.github/workflows/local-csv-quality-tool.yml'
+  pull_request:
+    paths:
+      - 'examples/local-csv-quality-tool/**'
+      - '.github/workflows/local-csv-quality-tool.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run deterministic parser and cleaner tests
+        run: node examples/local-csv-quality-tool/test-core.js
